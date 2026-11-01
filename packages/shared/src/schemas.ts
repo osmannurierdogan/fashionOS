@@ -12,6 +12,7 @@ export const layerEnum = z.enum(keysOf(LAYERS));
 export const occasionEnum = z.enum(keysOf(OCCASIONS));
 
 const hex = z.string().regex(/^#[0-9a-fA-F]{6}$/, "Geçersiz renk");
+const dateStr = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Tarih YYYY-AA-GG biçiminde olmalı").refine((d) => !Number.isNaN(Date.parse(d)), "Geçersiz tarih");
 
 // ---------- Auth ----------
 export const registerSchema = z.object({
@@ -140,7 +141,7 @@ export const suggestRequestSchema = z.object({
   occasion: occasionEnum.default("daily"),
   note: z.string().max(300).default(""),
   mustIncludeItemId: z.string().optional(),
-  date: z.string().optional(), // YYYY-MM-DD — takvim/plan için
+  date: dateStr.optional(), // takvim/plan için
   useAi: z.boolean().default(true),
   count: z.number().int().min(1).max(5).default(3),
   excludeItemIds: z.array(z.string()).max(100).default([]),
@@ -159,7 +160,7 @@ export const outfitCreateSchema = z.object({
     .partial()
     .optional(),
   saved: z.boolean().default(true),
-  plannedFor: z.string().nullable().optional(),
+  plannedFor: dateStr.nullable().optional(),
 });
 
 export const outfitUpdateSchema = z
@@ -167,21 +168,21 @@ export const outfitUpdateSchema = z
     name: z.string().max(80),
     rating: z.union([z.literal(-1), z.literal(0), z.literal(1)]),
     saved: z.boolean(),
-    plannedFor: z.string().nullable(),
+    plannedFor: dateStr.nullable(),
   })
   .partial();
 
 export const wearSchema = z.object({
   itemIds: z.array(z.string()).min(1).max(12),
   outfitId: z.string().optional(),
-  date: z.string().optional(),
+  date: dateStr.optional(),
 });
 
 export const packingRequestSchema = z.object({
   destination: z.string().max(80).default(""),
   lat: z.number().nullable().default(null),
   lon: z.number().nullable().default(null),
-  startDate: z.string(),
+  startDate: dateStr,
   days: z.number().int().min(1).max(30),
   occasions: z.array(occasionEnum).max(6).default(["daily"]),
 });

@@ -38,7 +38,7 @@ docker run -d -p 27017:27017 mongo:7         # yerel MongoDB (Atlas kullanıyors
 npm run dev                                  # API :4000, web :5173 (Vite /api'yi API'ye yönlendirir)
 ```
 
-Testler: `npm test` (MongoDB gerekir). 33 test: motor kuralları, kimlik doğrulama, kullanıcı izolasyonu, yükleme, öneri, sahte Qwen sunucusuyla yapay zekâ akışı, giyim geçmişi, KVKK. S3 sürücüsü testi: `S3_TEST_ENDPOINT=http://127.0.0.1:9090 npx vitest run test/s3.test.ts -w @fashionos/api` (adobe/s3mock ile).
+Testler: `npm test` (MongoDB gerekir). 34 test: motor kuralları, kimlik doğrulama, kullanıcı izolasyonu, yükleme, öneri, sahte Qwen sunucusuyla yapay zekâ akışı, giyim geçmişi, KVKK. S3 sürücüsü testi: `S3_TEST_ENDPOINT=http://127.0.0.1:9090 npx vitest run test/s3.test.ts -w @fashionos/api` (adobe/s3mock ile).
 
 ## Yayına alma (adım adım)
 
@@ -77,7 +77,7 @@ Modelin JSON modu desteği yoksa `AI_JSON_MODE=false` yap; uygulama yanıttaki J
 
 ### 6. İsteğe bağlı
 - **E-posta:** `SMTP_URL` (SendGrid, Mailgun, Yandex vb.). Boşsa e-postalar Railway log'una yazılır.
-- **Ödeme (Stripe):** Ürün + aylık fiyat oluştur → `STRIPE_PRICE_PRO`; webhook: `https://SITE/api/billing/webhook` (olaylar: `checkout.session.completed`, `customer.subscription.*`) → `STRIPE_WEBHOOK_SECRET`.
+- **Ödeme (Stripe):** Ürün + aylık fiyat oluştur → `STRIPE_PRICE_PRO`; webhook: `https://<railway-adresin>/api/billing/webhook` (doğrudan Railway adresi) (olaylar: `checkout.session.completed`, `customer.subscription.*`) → `STRIPE_WEBHOOK_SECRET`.
   > ⚠️ Stripe, Türkiye'de kurulu şirketleri doğrudan kabul etmiyor. Türkiye'den satış için iyzico veya Paddle / Lemon Squeezy gibi bir "merchant of record" gerekebilir. Ödeme kodu tek bir dosyada (`apps/api/src/lib/billing.ts`) olduğu için sağlayıcı değişikliği oradan yapılır.
 
 ## Varsayılan stil profili

@@ -393,3 +393,13 @@ describe("API", () => {
     expect((await a.req("GET", "/api/auth/me")).json.user).toBeNull();
   });
 });
+
+describe("doğrulama", () => {
+  it("bozuk tarih 400 döner", async () => {
+    const c = new Client();
+    await c.req("POST", "/api/auth/register", { name: "T", email: "t@test.com", password: "test-sifre-123" });
+    expect((await c.req("POST", "/api/outfits/suggest", { date: "yarın" })).status).toBe(400);
+    expect((await c.req("POST", "/api/outfits/packing", { startDate: "2026-13-45", days: 2 })).status).toBe(400);
+    expect((await c.req("POST", "/api/wear", { itemIds: ["507f1f77bcf86cd799439011"], date: "x" })).status).toBe(400);
+  });
+});

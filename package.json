@@ -1,0 +1,16 @@
+{
+  "name": "fashionos",
+  "private": true,
+  "workspaces": ["packages/*", "apps/*"],
+  "scripts": {
+    "dev": "npm run dev -w @fashionos/api & npm run dev -w @fashionos/web",
+    "dev:api": "npm run dev -w @fashionos/api",
+    "dev:web": "npm run dev -w @fashionos/web",
+    "build": "npm run build -w @fashionos/api && npm run build -w @fashionos/web",
+    "build:api": "npm run build -w @fashionos/api",
+    "build:web": "npm run build -w @fashionos/web",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present"
+  },
+  "engines": { "node": ">=20" }
+}

@@ -13,7 +13,7 @@ Kişisel gardırobu dijitalleştiren ve gardıroptaki parçalardan kombin önere
 | Önyüz | React + Vite + TypeScript + Tailwind, **PWA** (telefona kurulabilir) → **Netlify** |
 | Arka yüz | Node.js + TypeScript + Fastify (REST API) → **Railway** |
 | Veritabanı | **MongoDB Atlas** (Mongoose ile) |
-| Fotoğraf depolama | Cloudflare R2 (S3 uyumlu, ucuz) — geliştirmede yerel disk |
+| Fotoğraf depolama | **AWS S3** (özel bucket, imzalı URL ile erişim) — geliştirmede yerel disk |
 | Arka plan silme | Tarayıcıda, `@imgly/background-removal` (ücretsiz, sunucuya yük yok) |
 | Yapay zekâ | Claude API (fotoğraftan etiketleme + stilist) |
 | Hava durumu | Open-Meteo (ücretsiz, anahtarsız) |
@@ -32,7 +32,7 @@ Kişisel gardırobu dijitalleştiren ve gardıroptaki parçalardan kombin önere
         ▼
  Railway  ── Fastify API
         ├── MongoDB Atlas      (kullanıcılar, parçalar, kombinler, geri bildirim)
-        ├── Cloudflare R2      (parça fotoğrafları)
+        ├── AWS S3             (parça fotoğrafları)
         ├── Claude API         (etiketleme, stilist)
         └── Open-Meteo         (hava durumu)
 ```
@@ -186,13 +186,13 @@ GET    /api/account/export    DELETE /api/account
 | Parça | Nerede | Not |
 |---|---|---|
 | Web | Netlify | `apps/web` build, `netlify.toml` içinde `/api/*` → Railway proxy |
-| API | Railway | `apps/api`, ortam değişkenleri: `MONGODB_URI`, `SESSION_SECRET`, `ANTHROPIC_API_KEY`, `R2_*` |
+| API | Railway | `apps/api`, ortam değişkenleri: `MONGODB_URI`, `SESSION_SECRET`, `ANTHROPIC_API_KEY`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_REGION`, `S3_BUCKET` |
 | DB | MongoDB Atlas | Ücretsiz M0 küme başlangıç için yeterli |
-| Fotoğraf | Cloudflare R2 | 10 GB'a kadar ücretsiz |
+| Fotoğraf | AWS S3 | Özel (public olmayan) bucket; görseller kısa ömürlü imzalı URL ile açılır |
 
 Ortamlar: yerel geliştirme (Vite proxy + yerel Mongo/Atlas), ileride staging.
 
-**Tahmini maliyet (tek kullanıcı):** Netlify, Atlas M0, R2 ücretsiz; Railway ≈ 5 $/ay;
+**Tahmini maliyet (tek kullanıcı):** Netlify, Atlas M0 ücretsiz; S3 birkaç yüz parça için ayda birkaç sent; Railway ≈ 5 $/ay;
 Claude API: parça etiketleme ve kombin başına yaklaşık birkaç kuruş.
 
 ---
@@ -214,6 +214,13 @@ Her aşama sonunda çalışan, deploy edilmiş bir sürüm olur.
 
 ---
 
+### S3 kurulumu
+- Bucket: tamamen özel ("Block all public access" açık), bölge örn. `eu-central-1` (Frankfurt).
+- Anahtar yapısı: `users/{userId}/items/{itemId}/{original|cutout|thumb}.webp`.
+- IAM politikası yalnızca bu bucket'ta `s3:PutObject`, `s3:GetObject`, `s3:DeleteObject`, `s3:ListBucket` izni verir.
+- Görseller tarayıcıya kısa ömürlü (ör. 1 saat) imzalı GET URL'leriyle sunulur; kullanıcı silinince klasörü de silinir.
+- İleride: CloudFront önbelleği, eski görseller için daha ucuz depolama sınıfına geçiş.
+
 ## 11. Riskler ve önlemler
 
 - **Arka plan silme kalitesi** (karışık zemin, askıdaki kıyafet) → düz zeminde çekim ipucu,
@@ -226,6 +233,8 @@ Her aşama sonunda çalışan, deploy edilmiş bir sürüm olur.
 
 ## 12. Senden gerekecekler
 
-- Netlify, Railway, MongoDB Atlas, Cloudflare hesapları (deploy aşamasında adım adım anlatırım).
+- Netlify, Railway, MongoDB Atlas hesapları (deploy aşamasında adım adım anlatırım).
+- AWS: bir S3 bucket + **sadece o bucket'a yetkili** bir IAM kullanıcısının erişim anahtarları.
+  Anahtarlar sohbete/koda yazılmaz; Railway ortam değişkenlerine (yerelde `.env`) girilir.
 - Claude API anahtarı (2. aşamaya kadar gerekmez).
 - Profil için stil tercihlerin (uygulama içinden de girilebilir).

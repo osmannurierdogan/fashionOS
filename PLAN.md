@@ -15,7 +15,7 @@ Kişisel gardırobu dijitalleştiren ve gardıroptaki parçalardan kombin önere
 | Veritabanı | **MongoDB Atlas** (Mongoose ile) |
 | Fotoğraf depolama | **AWS S3** (özel bucket, imzalı URL ile erişim) — geliştirmede yerel disk |
 | Arka plan silme | Tarayıcıda, `@imgly/background-removal` (ücretsiz, sunucuya yük yok) |
-| Yapay zekâ | Claude API (fotoğraftan etiketleme + stilist) |
+| Yapay zekâ | **Qwen** (açık kaynak, görsel destekli; OpenAI uyumlu sağlayıcı: OpenRouter / DashScope / Ollama) |
 | Hava durumu | Open-Meteo (ücretsiz, anahtarsız) |
 | Arayüz | Türkçe, önce mobil tasarım |
 
@@ -33,7 +33,7 @@ Kişisel gardırobu dijitalleştiren ve gardıroptaki parçalardan kombin önere
  Railway  ── Fastify API
         ├── MongoDB Atlas      (kullanıcılar, parçalar, kombinler, geri bildirim)
         ├── AWS S3             (parça fotoğrafları)
-        ├── Claude API         (etiketleme, stilist)
+        ├── Qwen (OpenAI uyumlu) (etiketleme, stilist)
         └── Open-Meteo         (hava durumu)
 ```
 
@@ -116,7 +116,7 @@ Aynı doğrulama kuralları hem formda hem API'de kullanılır.
 1. Kameradan çek veya galeriden seç (birden fazla seçilebilir — toplu yükleme).
 2. **Tarayıcıda arka plan silinir** → önizleme ("beğenmedim, orijinali kullan" seçeneği).
 3. Tarayıcıda baskın renkler çıkarılır → renk alanı otomatik dolar (yapay zekâsız da çalışır).
-4. **Claude etiketleme** (API anahtarı varsa): kategori, alt kategori, desen, kumaş,
+4. **Qwen etiketleme** (API anahtarı varsa): kategori, alt kategori, desen, kumaş,
    mevsim, sıcaklık, resmiyet, stil önerir.
 5. Kullanıcı formu kontrol eder → kaydet. Sunucu görseli küçültür (WebP) + küçük önizleme üretir.
 
@@ -139,9 +139,9 @@ Aynı doğrulama kuralları hem formda hem API'de kullanılır.
 - Tazelik: son günlerde giyilen parçalara ceza, uzun süredir giyilmeyenlere hafif bonus.
 - Öğrenme: beğenilen kombinlerdeki parça ikilileri bonus, beğenilmeyenler ceza.
 
-**Adım 3 — Claude stilist**
-- En iyi 15–20 aday + parça özellikleri + bağlam Claude'a gönderilir.
-- Claude 3 kombin seçer, aksesuar ekler, her biri için kısa Türkçe açıklama yazar.
+**Adım 3 — Qwen stilist**
+- En iyi ~12 farklı aday + parça özellikleri + bağlam Qwen'e gönderilir.
+- Model 3 kombin seçer, aksesuar ekler, her biri için kısa Türkçe açıklama yazar.
 - **Yalnızca gönderilen parça ID'lerini kullanabilir** (yapılandırılmış çıktı) → gardıropta olmayan
   bir şey öneremez. API anahtarı yoksa veya kota dolduysa sadece kural motoru sonuçları gösterilir.
 
@@ -186,14 +186,14 @@ GET    /api/account/export    DELETE /api/account
 | Parça | Nerede | Not |
 |---|---|---|
 | Web | Netlify | `apps/web` build, `netlify.toml` içinde `/api/*` → Railway proxy |
-| API | Railway | `apps/api`, ortam değişkenleri: `MONGODB_URI`, `SESSION_SECRET`, `ANTHROPIC_API_KEY`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_REGION`, `S3_BUCKET` |
+| API | Railway | `apps/api`, ortam değişkenleri: `MONGODB_URI`, `SESSION_SECRET`, `AI_API_KEY`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_REGION`, `S3_BUCKET` |
 | DB | MongoDB Atlas | Ücretsiz M0 küme başlangıç için yeterli |
 | Fotoğraf | AWS S3 | Özel (public olmayan) bucket; görseller kısa ömürlü imzalı URL ile açılır |
 
 Ortamlar: yerel geliştirme (Vite proxy + yerel Mongo/Atlas), ileride staging.
 
 **Tahmini maliyet (tek kullanıcı):** Netlify, Atlas M0 ücretsiz; S3 birkaç yüz parça için ayda birkaç sent; Railway ≈ 5 $/ay;
-Claude API: parça etiketleme ve kombin başına yaklaşık birkaç kuruş.
+Qwen: Ollama ile ücretsiz, OpenRouter/DashScope ile istek başına çok düşük maliyet.
 
 ---
 
@@ -203,8 +203,8 @@ Claude API: parça etiketleme ve kombin başına yaklaşık birkaç kuruş.
 |---|---|---|
 | 0 | **Kurulum** | Monorepo, ortak sözlük/şemalar, API iskeleti, Mongo bağlantısı, kayıt/giriş, PWA kabuğu, Netlify + Railway ilk deploy |
 | 1 | **Gardırop** | Fotoğraf yükleme, tarayıcıda arka plan silme, renk çıkarma, parça formu, ızgara + filtre, düzenle/sil |
-| 2 | **Yapay zekâ etiketleme** | Claude ile otomatik etiket, toplu yükleme, kota sayacı |
-| 3 | **Kombin önerisi** | Kural motoru + puanlama, Claude stilist, hava durumu, "Bugün" ekranı, kolaj |
+| 2 | **Yapay zekâ etiketleme** | Qwen ile otomatik etiket, toplu yükleme, kota sayacı |
+| 3 | **Kombin önerisi** | Kural motoru + puanlama, Qwen stilist, hava durumu, "Bugün" ekranı, kolaj |
 | 4 | **Geri bildirim & geçmiş** | Beğen/beğenme, "giydim", kombin kaydetme, tekrar önleme, öğrenme |
 | 5 | **Ekstralar** | Haftalık plan/takvim, valiz listesi, istatistikler, eksik parça önerisi |
 | 6 | **Satışa hazırlık** | Ödeme (Stripe/iyzico), planlar, e-posta doğrulama, şifre sıfırlama, landing sayfası, KVKK metinleri |
@@ -236,5 +236,21 @@ Her aşama sonunda çalışan, deploy edilmiş bir sürüm olur.
 - Netlify, Railway, MongoDB Atlas hesapları (deploy aşamasında adım adım anlatırım).
 - AWS: bir S3 bucket + **sadece o bucket'a yetkili** bir IAM kullanıcısının erişim anahtarları.
   Anahtarlar sohbete/koda yazılmaz; Railway ortam değişkenlerine (yerelde `.env`) girilir.
-- Claude API anahtarı (2. aşamaya kadar gerekmez).
+- Qwen için sağlayıcı anahtarı (OpenRouter / DashScope) veya kendi Ollama sunucun.
 - Profil için stil tercihlerin (uygulama içinden de girilebilir).
+
+---
+
+## 13. Durum (uygulandı)
+
+| # | Aşama | Durum |
+|---|---|---|
+| 0 | Kurulum | ✅ Monorepo, ortak paket, Fastify API, MongoDB, oturum sistemi, PWA, Netlify/Railway ayarları, CI |
+| 1 | Gardırop | ✅ Toplu yükleme, tarayıcıda arka plan silme (+ düz zemin yedeği), renk çıkarma, form, filtreler, arşiv |
+| 2 | Yapay zekâ etiketleme | ✅ Qwen görsel model, JSON doğrulama + yeniden deneme, kota |
+| 3 | Kombin önerisi | ✅ Kural motoru, puanlama, Qwen stilist, hava durumu (Open-Meteo), "Bugün" ekranı, kolaj |
+| 4 | Geri bildirim & geçmiş | ✅ Beğen/beğenme, kaydet, giydim (geri alınabilir), tekrar önleme, ikili öğrenme |
+| 5 | Ekstralar | ✅ Haftalık plan, valiz listesi, istatistikler, eksik parça önerileri, elle kombin |
+| 6 | Satışa hazırlık | ✅ Planlar/kota, Stripe abonelik, e-posta doğrulama, şifre sıfırlama, tanıtım sayfası, KVKK onayı / dışa aktarma / silme |
+
+Kurulum ve deploy adımları: README.md

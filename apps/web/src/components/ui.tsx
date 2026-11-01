@@ -125,8 +125,8 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([]);
   const push = useCallback((text: string, kind: "ok" | "err" = "ok") => {
     const id = Date.now() + Math.random();
-    setToasts((t) => [...t, { id, text, kind }]);
-    setTimeout(() => setToasts((t) => t.filter((x) => x.id !== id)), 3500);
+    setToasts((t) => [...t.slice(-1), { id, text, kind }]); // en fazla 2 bildirim
+    setTimeout(() => setToasts((t) => t.filter((x) => x.id !== id)), 2800);
   }, []);
   return (
     <ToastCtx.Provider value={push}>

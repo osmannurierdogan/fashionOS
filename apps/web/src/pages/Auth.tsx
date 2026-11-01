@@ -47,7 +47,9 @@ export function Login() {
     run(async () => {
       const r = await api.post<{ user: UserDTO }>("/api/auth/login", { email, password });
       setUser(r.user);
-      nav((loc.state as any)?.from ?? "/", { replace: true });
+      // PublicOnly koruyucusunun "/" yönlendirmesinden sonra çalışsın
+      const to = (loc.state as any)?.from ?? "/";
+      setTimeout(() => nav(to, { replace: true }), 0);
     });
   };
   return (
@@ -74,7 +76,7 @@ export function Register() {
     run(async () => {
       const r = await api.post<{ user: UserDTO }>("/api/auth/register", f);
       setUser(r.user);
-      nav("/add?first=1", { replace: true });
+      setTimeout(() => nav("/add?first=1", { replace: true }), 0);
     });
   };
   return (

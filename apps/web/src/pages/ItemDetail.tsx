@@ -4,7 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Archive, ArrowLeft, Heart, Sparkles, Trash2, Camera } from "lucide-react";
 import { CATEGORIES, FORMALITY_LABELS, MATERIALS, PATTERNS, SEASONS, STYLES, WARMTH_LABELS, subcategoryLabel, type ItemDTO } from "@fashionos/shared";
 import { api } from "../lib/api";
-import { downscale, removeBg } from "../lib/image";
+import { cutout as makeCutout, downscale } from "../lib/image";
 import { fmtMoney, relDays } from "../lib/utils";
 import { ItemForm, type ItemFormValue } from "../components/ItemForm";
 import { itemTitle } from "../components/ItemCard";
@@ -51,8 +51,7 @@ export default function ItemDetail() {
     setBusy(true);
     try {
       const small = await downscale(file);
-      let cut: Blob | null = null;
-      try { cut = await removeBg(small); } catch { /* orijinal kullanılır */ }
+      const cut = await makeCutout(small);
       const fd = new FormData();
       fd.append("cutout", cut ? "true" : "false");
       fd.append("image", cut ?? small, "image.png");

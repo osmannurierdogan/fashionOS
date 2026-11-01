@@ -4,7 +4,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { AlertCircle, Camera, Check, ImagePlus, Lightbulb, Sparkles, Trash2, Wand2 } from "lucide-react";
 import type { AiTag, ItemDTO } from "@fashionos/shared";
 import { api, ApiError } from "../lib/api";
-import { downscale, extractColors, preloadBgModel, removeBg } from "../lib/image";
+import { cutout as makeCutout, downscale, extractColors, preloadBgModel } from "../lib/image";
 import { cn } from "../lib/utils";
 import { ItemForm, emptyItem, type ItemFormValue } from "../components/ItemForm";
 import { PageHeader, Spinner, useToast } from "../components/ui";
@@ -75,13 +75,9 @@ export default function AddItems() {
     (async () => {
       const id = next.id;
       patch(id, { status: "processing", stage: "Hazırlanıyor", progress: 0 });
-      let cutout: Blob | null = null;
-      try {
-        cutout = await removeBg(next.original, (pct, stage) => patch(id, { progress: pct, stage }));
-        patch(id, { cutout, previewCutout: URL.createObjectURL(cutout), useCutout: true });
-      } catch {
-        patch(id, { stage: "Arka plan silinemedi, orijinal kullanılacak" });
-      }
+      const cutout = await makeCutout(next.original, (pct, stage) => patch(id, { progress: pct, stage }));
+      if (cutout) patch(id, { cutout, previewCutout: URL.createObjectURL(cutout), useCutout: true });
+      else patch(id, { stage: "Arka plan silinemedi, orijinal kullanılacak" });
       const source = cutout ?? next.original;
       patch(id, { stage: "Renkler çıkarılıyor" });
       const colors = await extractColors(source).catch(() => []);
@@ -188,7 +184,7 @@ export default function AddItems() {
             <Lightbulb className="h-5 w-5 shrink-0 text-accent" />
             <p>
               Hoş geldin! İlk öneriler için en az <b>3 üst, 2 alt ve 1 ayakkabı</b> ekle. Parçayı düz bir zemine (yatak, yer) serip
-              yukarıdan çekersen arka plan en temiz şekilde silinir.
+              yukarıdan çekersen arka plan en temiz şekilde silinir. Beyaz parçaları koyu, koyu parçaları açık bir zeminde çek.
             </p>
           </div>
         )}
